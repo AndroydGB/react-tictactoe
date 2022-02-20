@@ -1,17 +1,155 @@
 import React from 'react';
 import ReactDOM from 'react-dom';
 import './index.css';
-import App from './App';
-import reportWebVitals from './reportWebVitals';
+
+// class Square extends React.Component {
+//     // output comes as this.props.{key}
+//     // we extend the constructor
+//   //   constructor(props) {
+//   //     // https://overreacted.io/why-do-we-write-super-props/
+//   //     // i guess its our way of "extending" React.Component's constructor
+//   //     super(props)
+//   //     this.state = {
+//   //       value: null,
+//   //   }
+//   // }
+
+//   render() {
+//     return (
+//       <button className="square" onClick={() => this.props.onClick()}>
+//         {this.props.value}
+//       </button>
+//     );
+//   }
+// }
+
+function Square(props) {
+  return (
+    <button className="square" onClick={props.onClick}>
+      {props.value}
+    </button>
+  )
+}
+
+// reminder: everything that accesses a class's state is pretty much dynamic (will re-render on updates)
+class Board extends React.Component {
+  constructor(props) {
+    super(props)
+    this.state = {
+      squares: Array(9).fill(null),
+      xIsNext: true
+    }
+  }
+
+  renderSquare(i) {
+    // we can give attributes such as className, onClick here, and they will come out on Square`s props
+    // btw! we use {() => function} when we wanna input a function because we wanna input IT, and not CALL it
+    // also if you dont use arrow functions it just doesnt work apparently. i guess its specific to React.Component
+    return <Square value={this.state.squares[i]} onClick={() => this.handleClick(i)}/>;
+  }
+
+  handleClick(i) {
+    const squares = this.state.squares.slice()
+
+    // if winner or if current square isnt null (has been clicked already)
+    if (calculateWinner(squares) || squares[i]) {
+      return
+    }
+
+    squares[i] = this.state.xIsNext ? 'X' : 'O'
+    // this isnt a problem because dict keys are like strings but without quotes, meanwhile values are actual variables
+    // directly linked to this.state
+    this.setState({
+      squares: squares,
+      xIsNext: !this.state.xIsNext
+    })
+    console.log(this.state.xIsNext  )
+    // we could do this but its convenient to have immutable data (https://reactjs.org/tutorial/tutorial.html#why-immutability-is-important)
+    // this.state.xIsNext = !this.state.xIsNext
+    // this wouldnt work because we're not accessing this.state
+    // this.xIsNext = !this.xIsNext
+  }
+
+  render() {
+    const winner = calculateWinner(this.state.squares)
+    let status;
+    if (winner) {
+      status = 'Winner:' + winner
+    }
+    else {      
+          // this will update dynamically
+          const status = 'Next player: ' + this.state.xIsNext ? 'X': 'O';
+    }
+
+    return (
+      <div>
+        <div className="status">{status}</div>
+        <div className="board-row">
+          {this.renderSquare(0)}
+          {this.renderSquare(1)}
+          {this.renderSquare(2)}
+        </div>
+        <div className="board-row">
+          {this.renderSquare(3)}
+          {this.renderSquare(4)}
+          {this.renderSquare(5)}
+        </div>
+        <div className="board-row">
+          {this.renderSquare(6)}
+          {this.renderSquare(7)}
+          {this.renderSquare(8)}
+        </div>
+      </div>
+    );
+  }
+}
+
+class Game extends React.Component {
+  constructor(props) {
+    super(props)
+    this.state = {
+      history: [Array(9).fill(null)]
+    }
+  }
+
+  render() {
+    return (
+      <div className="game">
+        <div className="game-board">
+          <Board history={this.state.history}/>
+        </div>
+        <div className="game-info">
+          <div>{/* status */}</div>
+          <ol>{/* TODO */}</ol>
+        </div>
+      </div>
+    );
+  }
+}
+
+function calculateWinner(squares) {
+  const lines = [
+    [0, 1, 2],
+    [3, 4, 5],
+    [6, 7, 8],
+    [0, 3, 6],
+    [1, 4, 7],
+    [2, 5, 8],
+    [0, 4, 8],
+    [2, 4, 6],
+  ];
+  for (let i = 0; i < lines.length; i++) {
+    const [a, b, c] = lines[i];
+    if (squares[a] && squares[a] === squares[b] && squares[a] === squares[c]) {
+      return squares[a];
+    }
+  }
+  return null;
+}
+
+// ========================================
 
 ReactDOM.render(
-  <React.StrictMode>
-    <App />
-  </React.StrictMode>,
+  <Game />,
   document.getElementById('root')
 );
-
-// If you want to start measuring performance in your app, pass a function
-// to log results (for example: reportWebVitals(console.log))
-// or send to an analytics endpoint. Learn more: https://bit.ly/CRA-vitals
-reportWebVitals();
