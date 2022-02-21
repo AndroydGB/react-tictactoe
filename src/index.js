@@ -33,57 +33,19 @@ function Square(props) {
 
 // reminder: everything that accesses a class's state is pretty much dynamic (will re-render on updates)
 class Board extends React.Component {
-  constructor(props) {
-    super(props)
-    this.state = {
-      squares: Array(9).fill(null),
-      xIsNext: true
-    }
-  }
 
   renderSquare(i) {
     // we can give attributes such as className, onClick here, and they will come out on Square`s props
     // btw! we use {() => function} when we wanna input a function because we wanna input IT, and not CALL it
     // also if you dont use arrow functions it just doesnt work apparently. i guess its specific to React.Component
-    return <Square value={this.state.squares[i]} onClick={() => this.handleClick(i)}/>;
-  }
-
-  handleClick(i) {
-    const squares = this.state.squares.slice()
-
-    // if winner or if current square isnt null (has been clicked already)
-    if (calculateWinner(squares) || squares[i]) {
-      return
-    }
-
-    squares[i] = this.state.xIsNext ? 'X' : 'O'
-    // this isnt a problem because dict keys are like strings but without quotes, meanwhile values are actual variables
-    // directly linked to this.state
-    this.setState({
-      squares: squares,
-      xIsNext: !this.state.xIsNext
-    })
-    console.log(this.state.xIsNext  )
-    // we could do this but its convenient to have immutable data (https://reactjs.org/tutorial/tutorial.html#why-immutability-is-important)
-    // this.state.xIsNext = !this.state.xIsNext
-    // this wouldnt work because we're not accessing this.state
-    // this.xIsNext = !this.xIsNext
+    return <Square value={this.props.squares[i]} onClick={() => this.props.handleClick(i)}/>;
   }
 
   render() {
-    const winner = calculateWinner(this.state.squares)
-    let status;
-    if (winner) {
-      status = 'Winner:' + winner
-    }
-    else {      
-          // this will update dynamically
-          const status = 'Next player: ' + this.state.xIsNext ? 'X': 'O';
-    }
+
 
     return (
       <div>
-        <div className="status">{status}</div>
         <div className="board-row">
           {this.renderSquare(0)}
           {this.renderSquare(1)}
@@ -108,19 +70,83 @@ class Game extends React.Component {
   constructor(props) {
     super(props)
     this.state = {
-      history: [Array(9).fill(null)]
+      xIsNext: true,
+      history: [Array(9).fill(null)],
+      stepNumber: 0
     }
   }
 
+  jumpTo(move) {
+    this.setState({
+      stepNumber: move,
+      xIsNext: (move % 2 === 0) ? true : false
+    })
+  }
+  
+
+  handleClick(i) {
+    var history = this.state.history
+    console.log(history)
+    const squares = history[this.state.stepNumber].slice()
+
+    // if winner or if current square isnt null (has been clicked already)
+    if (calculateWinner(squares) || squares[i]) {
+      return
+    }
+
+    if (this.state.stepNumber !== history.length) {
+      history = history.slice(0, this.state.stepNumber + 1)
+    }
+
+    squares[i] = this.state.xIsNext ? 'X' : 'O'
+    // this isnt a problem because dict keys are like strings but without quotes, meanwhile values are actual variables
+    // directly linked to this.state
+    this.setState({
+      history: history.concat([squares]),
+      xIsNext: !this.state.xIsNext,
+      stepNumber: this.state.stepNumber + 1
+    })
+    // we could do this but its convenient to have immutable data (https://reactjs.org/tutorial/tutorial.html#why-immutability-is-important)
+    // this.state.xIsNext = !this.state.xIsNext
+    // this wouldnt work because we're not accessing this.state
+    // this.xIsNext = !this.xIsNext
+  }
+
   render() {
+    const history = this.state.history
+    const current = history[this.state.stepNumber]
+    const winner = calculateWinner(current)
+    let status
+    if (winner) {
+      status = 'Winner: ' + winner
+    }
+    else {      
+          // this will update dynamically
+          console.log(this.state.xIsNext)
+          status = 'Next player: ' + (this.state.xIsNext ? 'X': 'O');
+          console.log(status)
+        }
+
+
+    const moves = history.map((_, move) => {
+      // if move != 0
+      const desc = move ? 'go to move ' + move : 'go to start' 
+      return (
+        <li key={move}>
+          <button onClick={() => this.jumpTo(move)}>{desc}</button>
+        </li>
+      )
+    })
+
     return (
       <div className="game">
         <div className="game-board">
-          <Board history={this.state.history}/>
+          <Board squares={current} xIsNext={this.state.xIsNext} status={status} handleClick={(i) => this.handleClick(i)}/>
         </div>
         <div className="game-info">
-          <div>{/* status */}</div>
-          <ol>{/* TODO */}</ol>
+          <div>{status}</div>
+          {/* react automatically renders arrays */}
+          <ol>{moves}</ol>
         </div>
       </div>
     );
@@ -153,3 +179,10 @@ ReactDOM.render(
   <Game />,
   document.getElementById('root')
 );
+
+// stuff thats still kinda hard for me to understand:
+//
+// when to pass props like this: {(i) => function(i)}, {() => function(i)}, {function}
+// i guess 1st one passes a function that accepts input. 2nd passes the function with specific input given. 3 is the actual function
+//
+// when to up state 
