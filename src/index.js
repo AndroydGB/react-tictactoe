@@ -71,7 +71,10 @@ class Game extends React.Component {
     super(props)
     this.state = {
       xIsNext: true,
-      history: [Array(9).fill(null)],
+      history: [{
+        squares: Array(9).fill(null),
+        updated: null
+      }],
       stepNumber: 0
     }
   }
@@ -87,7 +90,7 @@ class Game extends React.Component {
   handleClick(i) {
     var history = this.state.history
     console.log(history)
-    const squares = history[this.state.stepNumber].slice()
+    const squares = history[this.state.stepNumber].squares.slice()
 
     // if winner or if current square isnt null (has been clicked already)
     if (calculateWinner(squares) || squares[i]) {
@@ -102,7 +105,7 @@ class Game extends React.Component {
     // this isnt a problem because dict keys are like strings but without quotes, meanwhile values are actual variables
     // directly linked to this.state
     this.setState({
-      history: history.concat([squares]),
+      history: history.concat([{squares: squares, updated: i}]),
       xIsNext: !this.state.xIsNext,
       stepNumber: this.state.stepNumber + 1
     })
@@ -112,25 +115,27 @@ class Game extends React.Component {
     // this.xIsNext = !this.xIsNext
   }
 
-  render() {
+    // anything that should update its display on any event should go into render
+    render() {
     const history = this.state.history
-    const current = history[this.state.stepNumber]
-    const winner = calculateWinner(current)
+    const currentSquares = history[this.state.stepNumber].squares
+    const winner = calculateWinner(currentSquares)
     let status
     if (winner) {
       status = 'Winner: ' + winner
     }
     else {      
-          // this will update dynamically
-          console.log(this.state.xIsNext)
-          status = 'Next player: ' + (this.state.xIsNext ? 'X': 'O');
-          console.log(status)
-        }
+      // this will update dynamically
+      console.log(this.state.xIsNext)
+      status = 'Next player: ' + (this.state.xIsNext ? 'X': 'O');
+      console.log(status)
+      }
 
 
     const moves = history.map((_, move) => {
-      // if move != 0
-      const desc = move ? 'go to move ' + move : 'go to start' 
+      const movePos = history[move].updated
+      // possible because 0 = bool(false)
+      const desc = move ? `go to move ${move} (${(movePos % 3) + 1}, ${Math.ceil((movePos + 1) / 3)})` : 'go to start' 
       return (
         <li key={move}>
           <button onClick={() => this.jumpTo(move)}>{desc}</button>
@@ -141,7 +146,7 @@ class Game extends React.Component {
     return (
       <div className="game">
         <div className="game-board">
-          <Board squares={current} xIsNext={this.state.xIsNext} status={status} handleClick={(i) => this.handleClick(i)}/>
+          <Board squares={currentSquares} xIsNext={this.state.xIsNext} status={status} handleClick={(i) => this.handleClick(i)}/>
         </div>
         <div className="game-info">
           <div>{status}</div>
@@ -184,5 +189,6 @@ ReactDOM.render(
 //
 // when to pass props like this: {(i) => function(i)}, {() => function(i)}, {function}
 // i guess 1st one passes a function that accepts input. 2nd passes the function with specific input given. 3 is the actual function
+// also: binding - https://reactjs.org/docs/handling-events.html
 //
 // when to up state 
